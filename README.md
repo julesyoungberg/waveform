@@ -1,3 +1,3 @@
 # waveform
 
-A basic audio visualizer in rust.
+A basic audio visualizer in rust with nannou.
