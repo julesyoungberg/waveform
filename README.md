@@ -1,8 +1,7 @@
 # waveform
 
-A basic audio visualizer in rust with nannou.
+A basic waveform audio visualizer in rust with nannou.
 
-## todo
+## Note
 
-- use nannou_audio to get microphone input: https://github.com/nannou-org/nannou/tree/master/nannou_audio
-- draw the current frame to the screen
+You must grant microphone access to the terminal you run it from, otherwise the input buffer will be only 0s.
