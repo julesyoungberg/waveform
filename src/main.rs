@@ -6,6 +6,9 @@ use std::time;
 
 mod util;
 
+const WIDTH: u32 = 600;
+const HEIGHT: u32 = 400;
+
 fn main() {
     nannou::app(model).run();
 }
@@ -18,7 +21,11 @@ struct Model {
 
 fn model(app: &App) -> Model {
     // Create a window to receive key pressed events.
-    app.new_window().view(view).build().unwrap();
+    app.new_window()
+        .size(WIDTH, HEIGHT)
+        .view(view)
+        .build()
+        .unwrap();
 
     // Initialise the audio host so we can spawn an audio stream.
     println!("configuring audio input device");
@@ -46,13 +53,21 @@ fn model(app: &App) -> Model {
     Model { rx, stream }
 }
 
-fn view(_app: &App, model: &Model, frame: Frame) {
-    frame.clear(PURPLE);
+fn view(app: &App, model: &Model, frame: Frame) {
+    let draw = app.draw();
+    draw.background().color(PURPLE);
 
-    let data = match model.rx.recv_timeout(time::Duration::from_millis(1)) {
-        Ok(m) => m,
-        Err(_) => return,
-    };
+    if let Ok(data) = model.rx.recv_timeout(time::Duration::from_millis(1)) {
+        let num_samples = data.len();
 
-    println!("received: {:?}", data.len());
+        let points = (0..num_samples).map(|i| {
+            let x = ((i as f32 / num_samples as f32) - 0.5) * WIDTH as f32;
+            let y = data[i] * HEIGHT as f32;
+            (pt2(x, y), YELLOW)
+        });
+
+        draw.polyline().weight(3.0).points_colored(points);
+    }
+
+    draw.to_frame(app, &frame).unwrap();
 }
