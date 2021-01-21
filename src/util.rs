@@ -7,7 +7,7 @@ pub fn get_audio_device() -> Device {
         .expect("no audio input device available")
 }
 
-pub fn get_mic_config(device: &Device) -> SupportedStreamConfig {
+pub fn get_audio_config(device: &Device) -> SupportedStreamConfig {
     // get supported config
     let mut supported_configs_range = device
         .supported_input_configs()

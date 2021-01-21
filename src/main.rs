@@ -30,7 +30,7 @@ fn model(app: &App) -> Model {
     // Initialise the audio host so we can spawn an audio stream.
     println!("configuring audio input device");
     let audio_device = util::get_audio_device();
-    let mic_config = util::get_mic_config(&audio_device);
+    let mic_config = util::get_audio_config(&audio_device);
     let cpal::SampleRate(sample_rate) = mic_config.sample_rate();
     println!("sample_rate: {:?}", sample_rate);
 
@@ -40,9 +40,12 @@ fn model(app: &App) -> Model {
     let stream = audio_device
         .build_input_stream(
             &mic_config.config(),
-            move |data: &[f32], _: &cpal::InputCallbackInfo| match tx.send(data.to_vec()) {
-                Ok(()) => (),
-                Err(e) => panic!(e),
+            move |data: &[f32], _: &cpal::InputCallbackInfo| {
+                // println!("{:?}", data);
+                match tx.send(data.to_vec()) {
+                    Ok(()) => (),
+                    Err(e) => panic!(e),
+                };
             },
             move |err| {
                 panic!(err);
