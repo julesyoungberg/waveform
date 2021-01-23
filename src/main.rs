@@ -21,7 +21,6 @@ struct Model {
 }
 
 fn model(app: &App) -> Model {
-    // Create a window to receive key pressed events.
     app.new_window()
         .size(WIDTH, HEIGHT)
         .view(view)
