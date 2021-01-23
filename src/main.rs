@@ -67,7 +67,8 @@ fn model(app: &App) -> Model {
 }
 
 fn update(_app: &App, model: &mut Model, _update: Update) {
-    model.buffer = (0..FRAME_SIZE)
+    let buffer_size = (FRAME_SIZE as f32 / 2.0) as usize;
+    model.buffer = (0..buffer_size)
         .map(|_| match model.consumer.pop() {
             Some(f) => f,
             None => 0.0,
@@ -79,7 +80,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
     draw.background().color(PURPLE);
 
-    let buffer_size = FRAME_SIZE;
+    let buffer_size = FRAME_SIZE as f32 / 2.0;
     let points = model.buffer.iter().enumerate().map(|(i, sample)| {
         let x = ((i as f32 / buffer_size as f32) - 0.5) * WIDTH as f32;
         let y = sample * HEIGHT as f32 / 2.0;
