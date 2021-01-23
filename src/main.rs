@@ -82,7 +82,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let buffer_size = FRAME_SIZE;
     let points = model.buffer.iter().enumerate().map(|(i, sample)| {
         let x = ((i as f32 / buffer_size as f32) - 0.5) * WIDTH as f32;
-        let y = sample * HEIGHT as f32;
+        let y = sample * HEIGHT as f32 / 2.0;
         (pt2(x, y), YELLOW)
     });
 
