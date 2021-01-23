@@ -9,4 +9,5 @@ edition = "2018"
 [dependencies]
 cpal = "0.13.1"
 nannou = "0.15"
+rand = "0.8.2"
 ringbuf = "0.2.3"
