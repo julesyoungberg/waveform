@@ -13,6 +13,7 @@ fn main() {
     nannou::app(model).update(update).run();
 }
 
+// need to hold a reference to stream to keep it alive so we need dead_code
 #[allow(dead_code)]
 struct Model {
     buffer: Vec<f32>,
