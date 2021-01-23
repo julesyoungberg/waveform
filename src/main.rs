@@ -1,21 +1,22 @@
 use cpal;
 use cpal::traits::DeviceTrait;
 use nannou::prelude::*;
-use std::sync::mpsc::channel;
-use std::time;
+use ringbuf::{Consumer, RingBuffer};
 
 mod util;
 
 const WIDTH: u32 = 600;
 const HEIGHT: u32 = 400;
+const FRAME_SIZE: usize = 1024;
 
 fn main() {
-    nannou::app(model).run();
+    nannou::app(model).update(update).run();
 }
 
 #[allow(dead_code)]
 struct Model {
-    rx: std::sync::mpsc::Receiver<Vec<f32>>,
+    buffer: Vec<f32>,
+    consumer: Consumer<f32>,
     stream: cpal::Stream,
 }
 
@@ -34,18 +35,23 @@ fn model(app: &App) -> Model {
     let cpal::SampleRate(sample_rate) = mic_config.sample_rate();
     println!("sample_rate: {:?}", sample_rate);
 
-    let (tx, rx) = channel();
+    // Create a ring buffer and split it into producer and consumer
+    let ring_buffer = RingBuffer::<f32>::new(FRAME_SIZE * 2); // Add some latency
+    let (mut producer, consumer) = ring_buffer.split();
+    for _ in 0..FRAME_SIZE {
+        // The ring buffer has twice as much space as necessary to add latency here,
+        // so this should never fail
+        producer.push(0.0).unwrap();
+    }
 
     // create the stream
     let stream = audio_device
         .build_input_stream(
             &mic_config.config(),
             move |data: &[f32], _: &cpal::InputCallbackInfo| {
-                // println!("{:?}", data);
-                match tx.send(data.to_vec()) {
-                    Ok(()) => (),
-                    Err(e) => panic!(e),
-                };
+                for &sample in data {
+                    producer.push(sample).ok();
+                }
             },
             move |err| {
                 panic!(err);
@@ -53,24 +59,34 @@ fn model(app: &App) -> Model {
         )
         .unwrap();
 
-    Model { rx, stream }
+    Model {
+        buffer: vec![],
+        consumer,
+        stream,
+    }
+}
+
+fn update(_app: &App, model: &mut Model, _update: Update) {
+    model.buffer = (0..FRAME_SIZE)
+        .map(|_| match model.consumer.pop() {
+            Some(f) => f,
+            None => 0.0,
+        })
+        .collect::<Vec<f32>>();
 }
 
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
     draw.background().color(PURPLE);
 
-    if let Ok(data) = model.rx.recv_timeout(time::Duration::from_millis(1)) {
-        let num_samples = data.len();
+    let buffer_size = FRAME_SIZE;
+    let points = model.buffer.iter().enumerate().map(|(i, sample)| {
+        let x = ((i as f32 / buffer_size as f32) - 0.5) * WIDTH as f32;
+        let y = sample * HEIGHT as f32;
+        (pt2(x, y), YELLOW)
+    });
 
-        let points = (0..num_samples).map(|i| {
-            let x = ((i as f32 / num_samples as f32) - 0.5) * WIDTH as f32;
-            let y = data[i] * HEIGHT as f32;
-            (pt2(x, y), YELLOW)
-        });
-
-        draw.polyline().weight(3.0).points_colored(points);
-    }
+    draw.polyline().weight(3.0).points_colored(points);
 
     draw.to_frame(app, &frame).unwrap();
 }
